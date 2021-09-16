@@ -1,9 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
+	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -48,11 +50,11 @@ func main() {
 
 	for {
 
-		err := getSMBFiles(app.smb.servername, app.smb.sharename, app.smb.username, app.smb.password, app.smb.domain)
+		err := sendSMBFiles(app, app.smb.servername, app.smb.sharename, app.smb.username, app.smb.password, app.smb.domain)
 		if err != nil {
-			log.Fatal("getting SMB files failed")
+			log.Println("currently no files found on \\\\" + app.smb.servername + "\\" + app.smb.servername)
 		}
-		time.Sleep(time.Duration(app.interval.seconds))
+		time.Sleep(time.Duration(app.interval.seconds) * time.Second)
 
 	}
 
@@ -94,11 +96,15 @@ func getInterval(interval_seconds string) int {
 		if err != nil {
 			log.Fatal("interval seconds must be a number")
 		}
+		if interval < 30 {
+			log.Println("the interval must at least be 30s -> automatically set to this value now")
+			interval = 30
+		}
 		return interval
 	}
 }
 
-func getSMBFiles(servername string, sharename string, username string, password string, domain string) error {
+func sendSMBFiles(app *application, servername string, sharename string, username string, password string, domain string) error {
 	conn, err := net.Dial("tcp", servername+":445")
 	if err != nil {
 		panic(err)
@@ -135,8 +141,48 @@ func getSMBFiles(servername string, sharename string, username string, password 
 		return err
 	}
 	for i := range fis {
-		fmt.Println(fis[i].Name())
+		log.Println("found file: " + fis[i].Name())
+
+		f, err := fs.Open(fis[i].Name())
+		if err != nil {
+			log.Println("file not found")
+		}
+		defer fs.Remove(fis[i].Name())
+		defer f.Close()
+
+		bs, err := ioutil.ReadAll(f)
+		if err != nil {
+			log.Println("file not readable")
+		}
+
+		status := postData(bs, app.endpoint.url, fis[i].Name(), app)
+
+		if status != "200 OK" {
+			log.Println(status + ": file not sent")
+			continue
+		} else {
+			log.Println(status + ": " + fis[i].Name() + " successfully sent")
+		}
+
+		log.Println("deleted " + fis[i].Name())
 	}
 
 	return nil
+}
+
+func postData(content []byte, url string, filename string, app *application) string {
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(content))
+	req.Header.Set("X-Custom-Header", "post-requester")
+	req.Header.Set("Content-Type", "text/xml")
+	req.SetBasicAuth(app.endpoint.username, app.endpoint.password)
+	if err != nil {
+		log.Println(err)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+	}
+	defer resp.Body.Close()
+	return resp.Status
 }
