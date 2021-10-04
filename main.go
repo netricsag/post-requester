@@ -53,7 +53,6 @@ func main() {
 		err := sendSMBFiles(app, app.smb.servername, app.smb.sharename, app.smb.username, app.smb.password, app.smb.domain)
 		if err != nil {
 			log.Println(err)
-			// log.Println("currently no files found on \\\\" + app.smb.servername + "\\" + app.smb.sharename)
 		}
 		time.Sleep(time.Duration(app.interval.seconds) * time.Second)
 
