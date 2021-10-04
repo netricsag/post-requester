@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hirochachacha/go-smb2"
@@ -51,7 +52,7 @@ func main() {
 	for {
 
 		err := sendSMBFiles(app, app.smb.servername, app.smb.sharename, app.smb.username, app.smb.password, app.smb.domain)
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "EOF") {
 			log.Println(err)
 		}
 		time.Sleep(time.Duration(app.interval.seconds) * time.Second)
