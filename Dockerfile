@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.16
+FROM golang:1.17
 WORKDIR /go/src/github.com/bluestoneag/post-requester/
 RUN go get -d -v golang.org/x/net/html  
 COPY . .
