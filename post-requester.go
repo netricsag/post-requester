@@ -97,9 +97,6 @@ func sendSMBFiles() error {
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
 
-		// log status code
-		util.InfoLogger.Printf("status code: %d", response.StatusCode)
-
 		// close file handle
 		if err := f.Close(); err != nil {
 			util.ErrorLogger.Printf("failed to close file: %s; error: %s", fis[i].Name(), err)
@@ -134,6 +131,7 @@ func postData(content []byte) (*http.Response, error) {
 		util.ErrorLogger.Println(err)
 		return nil, err
 	}
+	util.InfoLogger.Printf("response status code: %d", resp.StatusCode)
 	defer resp.Body.Close()
 	return resp, nil
 }
