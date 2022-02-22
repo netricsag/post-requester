@@ -100,6 +100,14 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 		// log status code
 		util.InfoLogger.Printf("status code: %d", response.StatusCode)
 
+		// close file
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				util.ErrorLogger.Printf("failed to close file: %s; error: %s", f.Name(), err)
+			}
+		}()
+
 		// return status code is 200 OK remove file
 		if response.StatusCode == 200 {
 			defer func() {
@@ -115,14 +123,6 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 		} else {
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
-
-		// close file
-		defer func() {
-			err := f.Close()
-			if err != nil {
-				util.ErrorLogger.Printf("failed to close file: %s; error: %s", f.Name(), err)
-			}
-		}()
 	}
 
 	return nil
