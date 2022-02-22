@@ -32,18 +32,18 @@ var (
 // LoadEnv loads OS environment variables
 func LoadEnv() error {
 
-	if App.Endpoint.Username = os.Getenv("Endpoint_USERNAME"); App.Endpoint.Username == "" {
-		err = errors.New("Endpoint_USERNAME is not set")
+	if App.Endpoint.Username = os.Getenv("ENDPOINT_USERNAME"); App.Endpoint.Username == "" {
+		err = errors.New("ENDPOINT_USERNAME is not set")
 		return err
 	}
 
-	if App.Endpoint.Password = os.Getenv("Endpoint_PASSWORD"); App.Endpoint.Password == "" {
-		err = errors.New("Endpoint_PASSWORD is not set")
+	if App.Endpoint.Password = os.Getenv("ENDPOINT_PASSWORD"); App.Endpoint.Password == "" {
+		err = errors.New("ENDPOINT_PASSWORD is not set")
 		return err
 	}
 
-	if App.Endpoint.URL = os.Getenv("Endpoint_URL"); App.Endpoint.URL == "" {
-		err = errors.New("Endpoint_URL is not set")
+	if App.Endpoint.URL = os.Getenv("ENDPOINT_URL"); App.Endpoint.URL == "" {
+		err = errors.New("ENDPOINT_URL is not set")
 		return err
 	}
 
