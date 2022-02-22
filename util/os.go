@@ -74,7 +74,9 @@ func LoadEnv() error {
 
 	// get string to int for Interval
 	if App.Interval.Seconds, err = strconv.Atoi(os.Getenv("INTERVAL_SECONDS")); App.Interval.Seconds == 0 || err != nil {
+		ErrorLogger.Println("INTERVAL_SECONDS is not set or is not a number, using default value of 60")
 		App.Interval.Seconds = 60
+		err = nil // reset error
 	}
 
 	return err
