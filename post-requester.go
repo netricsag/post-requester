@@ -87,64 +87,58 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 			util.ErrorLogger.Printf("failed to open file: %s", fis[i].Name())
 		}
 
-		// wait until return of surrounding function and then remove the file and close the file
-		defer func() {
-			var err error
-			err = fs.Remove(fis[i].Name())
-			if err != nil {
-				util.ErrorLogger.Printf("failed to remove file: %s; %s", fis[i].Name(), err)
-			}
-
-			err = f.Close()
-			if err != nil {
-				util.ErrorLogger.Printf("failed to close file: %s; %s", fis[i].Name(), err)
-			}
-		}()
-
 		bs, err := ioutil.ReadAll(f)
 		if err != nil {
 			util.ErrorLogger.Printf("failed to read file: %s", fis[i].Name())
 		}
 
-		status, err := postData(bs, util.App.Endpoint.URL, fis[i].Name(), app)
+		response, err := postData(bs, util.App.Endpoint.URL, fis[i].Name(), app)
 		if err != nil {
-			util.ErrorLogger.Printf("failed to post file: %s; %s", fis[i].Name(), err)
+			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
 
-		util.InfoLogger.Printf("posted file: %s; status: %s", fis[i].Name(), status)
+		// log response body and status code
+		util.InfoLogger.Printf("status code: %d", response.StatusCode)
+		util.InfoLogger.Printf("response body: %s", response.Body)
+		util.InfoLogger.Printf("response headers: %s", response.Header)
 
-		if status == "200 OK" || status == "201 Created" {
-			return nil
+		// return status code is 200 OK remove file
+		if response.StatusCode == 200 {
+			if err := fs.Remove(fis[i].Name()); err != nil {
+				util.ErrorLogger.Printf("failed to remove file: %s", fis[i].Name())
+			}
+
+			util.InfoLogger.Printf("removed file: %s", fis[i].Name())
+
+			// return status code is not 200 OK
+		} else {
+			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
+		}
+
+		// close file
+		if err := f.Close(); err != nil {
+			util.ErrorLogger.Printf("failed to close file: %s", fis[i].Name())
 		}
 	}
 
 	return nil
 }
 
-func postData(content []byte, url string, filename string, app *util.Application) (string, error) {
+func postData(content []byte, url string, filename string, app *util.Application) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(content))
 	req.Header.Set("X-Custom-Header", "post-requester")
 	req.Header.Set("Content-Type", "text/xml")
 	req.SetBasicAuth(util.App.Endpoint.Username, util.App.Endpoint.Password)
 	if err != nil {
 		util.ErrorLogger.Println(err)
-		return "", err
+		return nil, err
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		util.ErrorLogger.Println(err)
-		return "", err
+		return nil, err
 	}
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			util.ErrorLogger.Println(err)
-		}
-	}()
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		util.ErrorLogger.Printf("failed to post file: %s", filename)
-		return resp.Status, err
-	}
-	return resp.Status, nil
+	defer resp.Body.Close()
+	return resp, nil
 }
