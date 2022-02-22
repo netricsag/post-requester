@@ -97,27 +97,31 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
 
-		// log response body and status code
+		// log status code
 		util.InfoLogger.Printf("status code: %d", response.StatusCode)
-		util.InfoLogger.Printf("response body: %s", response.Body)
-		util.InfoLogger.Printf("response headers: %s", response.Header)
+
+		// close file
+		defer func() {
+			err := f.Close()
+			if err != nil {
+				util.ErrorLogger.Printf("failed to close file: %s; error: %s", f.Name(), err)
+			}
+		}()
 
 		// return status code is 200 OK remove file
 		if response.StatusCode == 200 {
-			if err := fs.Remove(fis[i].Name()); err != nil {
-				util.ErrorLogger.Printf("failed to remove file: %s", fis[i].Name())
-			}
+			defer func() {
+				err := fs.Remove(fis[i].Name())
+				if err != nil {
+					util.ErrorLogger.Printf("failed to remove file: %s; error: %s", fis[i].Name(), err)
+				}
+			}()
 
 			util.InfoLogger.Printf("removed file: %s", fis[i].Name())
 
 			// return status code is not 200 OK
 		} else {
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
-		}
-
-		// close file
-		if err := f.Close(); err != nil {
-			util.ErrorLogger.Printf("failed to close file: %s", fis[i].Name())
 		}
 	}
 
