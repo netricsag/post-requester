@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -93,12 +92,12 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 			var err error
 			err = fs.Remove(fis[i].Name())
 			if err != nil {
-				util.ErrorLogger.Printf("failed to remove file: %s", fis[i].Name())
+				util.ErrorLogger.Printf("failed to remove file: %s; %s", fis[i].Name(), err)
 			}
 
 			err = f.Close()
 			if err != nil {
-				util.ErrorLogger.Printf("failed to close file: %s", fis[i].Name())
+				util.ErrorLogger.Printf("failed to close file: %s; %s", fis[i].Name(), err)
 			}
 		}()
 
@@ -109,17 +108,14 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 
 		status, err := postData(bs, util.App.Endpoint.URL, fis[i].Name(), app)
 		if err != nil {
-			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
+			util.ErrorLogger.Printf("failed to post file: %s; %s", fis[i].Name(), err)
 		}
 
-		if status != "200 OK" && status != "201 Created" {
-			util.ErrorLogger.Printf("failed to post file: %s", fis[i].Name())
-			continue
-		} else {
-			util.InfoLogger.Printf("posted file: %s", fis[i].Name())
-		}
+		util.InfoLogger.Printf("posted file: %s; status: %s", fis[i].Name(), status)
 
-		log.Println("deleted " + fis[i].Name())
+		if status == "200 OK" || status == "201 Created" {
+			return nil
+		}
 	}
 
 	return nil
