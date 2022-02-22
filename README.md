@@ -16,9 +16,6 @@ export SMB_SHARENAME=<sharename> # The name of the Windows Share (not \\192.168.
 export SMB_USERNAME=<smb username> # without domain
 export SMB_PASSWORD=<smb password>
 export SMB_DOMAIN=<windows domain> # e.g. domain.local
-```
-**optional** you can set another server port with the following Env Variable (default is Port 80)
-```bash
 export INTERVAL_SECONDS=<seconds> # Default set to 60
 ```
 
