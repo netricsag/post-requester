@@ -95,6 +95,14 @@ func sendSMBFiles() error {
 		response, err := postData(bs)
 		if err != nil {
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
+		} else {
+			util.InfoLogger.Printf("posted data: %s", fis[i].Name())
+		}
+
+		if response != nil {
+			util.InfoLogger.Printf("status code: %d", response.StatusCode)
+		} else {
+			util.InfoLogger.Printf("no response")
 		}
 
 		// close file handle
@@ -125,13 +133,13 @@ func postData(content []byte) (*http.Response, error) {
 		util.ErrorLogger.Println(err)
 		return nil, err
 	}
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		util.ErrorLogger.Println(err)
 		return nil, err
 	}
-	util.InfoLogger.Printf("response status code: %d", resp.StatusCode)
-	defer resp.Body.Close()
+
 	return resp, nil
 }
