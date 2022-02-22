@@ -25,7 +25,7 @@ func init() {
 func main() {
 	util.InfoLogger.Println("Starting post-requester")
 	for {
-		err := sendSMBFiles(util.App, util.App.SMB.Servername, util.App.SMB.Sharename, util.App.SMB.Username, util.App.SMB.Password, util.App.SMB.Domain)
+		err := sendSMBFiles()
 		if err != nil && !strings.Contains(err.Error(), "EOF") {
 			util.ErrorLogger.Println(err)
 		}
@@ -33,8 +33,8 @@ func main() {
 	}
 }
 
-func sendSMBFiles(app *util.Application, servername string, sharename string, username string, password string, domain string) error {
-	conn, err := net.Dial("tcp", servername+":445")
+func sendSMBFiles() error {
+	conn, err := net.Dial("tcp", util.App.SMB.Servername+":445")
 	if err != nil {
 		return err
 	}
@@ -42,9 +42,9 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 
 	d := &smb2.Dialer{
 		Initiator: &smb2.NTLMInitiator{
-			User:     username,
-			Password: password,
-			Domain:   domain,
+			User:     util.App.SMB.Username,
+			Password: util.App.SMB.Password,
+			Domain:   util.App.SMB.Domain,
 		},
 	}
 
@@ -59,7 +59,7 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 		}
 	}()
 
-	fs, err := s.Mount("\\\\" + servername + "\\" + sharename)
+	fs, err := s.Mount("\\\\" + util.App.SMB.Servername + "\\" + util.App.SMB.Sharename)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 			util.ErrorLogger.Printf("failed to read file: %s", fis[i].Name())
 		}
 
-		response, err := postData(bs, util.App.Endpoint.URL, fis[i].Name(), app)
+		response, err := postData(bs)
 		if err != nil {
 			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
@@ -100,36 +100,27 @@ func sendSMBFiles(app *util.Application, servername string, sharename string, us
 		// log status code
 		util.InfoLogger.Printf("status code: %d", response.StatusCode)
 
-		// close file
-		defer func() {
-			err := f.Close()
-			if err != nil {
-				util.ErrorLogger.Printf("failed to close file: %s; error: %s", f.Name(), err)
-			}
-		}()
+		// close file handle
+		if err := f.Close(); err != nil {
+			util.ErrorLogger.Printf("failed to close file: %s; error: %s", fis[i].Name(), err)
+			continue
+		}
 
-		// return status code is 200 OK remove file
+		// delete file if status code is 200
 		if response.StatusCode == 200 {
-			defer func() {
-				err := fs.Remove(fis[i].Name())
-				if err != nil {
-					util.ErrorLogger.Printf("failed to remove file: %s; error: %s", fis[i].Name(), err)
-				}
-			}()
+			if err := fs.Remove(fis[i].Name()); err != nil {
+				util.ErrorLogger.Printf("failed to remove file: %s; error: %s", fis[i].Name(), err)
+			}
 
 			util.InfoLogger.Printf("removed file: %s", fis[i].Name())
-
-			// return status code is not 200 OK
-		} else {
-			util.ErrorLogger.Printf("failed to post data: %s", fis[i].Name())
 		}
 	}
 
 	return nil
 }
 
-func postData(content []byte, url string, filename string, app *util.Application) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(content))
+func postData(content []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", util.App.Endpoint.URL, bytes.NewBuffer(content))
 	req.Header.Set("X-Custom-Header", "post-requester")
 	req.Header.Set("Content-Type", "text/xml")
 	req.SetBasicAuth(util.App.Endpoint.Username, util.App.Endpoint.Password)
