@@ -1,7 +1,7 @@
 # post-requester
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bluestoneag/post-requester)](https://goreportcard.com/report/github.com/bluestoneag/post-requester)
+[![Go Report Card](https://goreportcard.com/badge/github.com/natron-io/post-requester)](https://goreportcard.com/report/github.com/natron-io/post-requester)
 
 A microservice application, which gets files from a SMB share and post their content to an API Endpoint.
 
