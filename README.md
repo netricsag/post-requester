@@ -42,7 +42,7 @@ dockerbluestone/post-requester:latest
 version: "3.9"  # optional since v1.27.0
 services:
   post-requester:
-    image: dockerbluestone/post-requester:latest
+    image: ghcr.io/natron.io/post-requester:latest
     environment:
       - ENDPOINT_USERNAME=username
       - ENDPOINT_PASSWORD=password
